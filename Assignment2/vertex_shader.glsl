@@ -17,5 +17,5 @@ void main() {
     FragPos = vec3(model * vec4(aPos, 1.0));
     // TODO 1: Calculate gl_Position using the model, view, and projection matrices
     // Hint: gl_Position is a vec4 that represents the position of the vertex in clip space
-    // gl_Position =
+    gl_Position = projection * view * model * vec4(aPos, 1.0f);
 }
