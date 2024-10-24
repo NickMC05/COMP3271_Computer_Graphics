@@ -12,10 +12,10 @@ uniform vec3 objectColor;
 void main() {
 
     float ambientStrength = 0.1;
-    float specularStrength = 0.5;
+    float specularStrength = 0.3;
     float diffuseStrength = 1.0;
-    float shininess = 32.0;
-    float lightStrength = 1.0;
+    float shininess = 0.8;
+    float lightStrength = 0.5;
     float ambientLightStrength = 1.0;
 
     float ambient = 1;
