@@ -10,8 +10,8 @@
 
 // TODO: feel free to modify the following parameters
 const int kMaxTraceDepth = 5;
-const int spp = 8;
-const int NUM_THREAD = 8;
+const int spp = 512;
+const int NUM_THREAD = 512;
 const std::string scene_file = "scene/teapot_area_light.toml";
 const std::string output_path = "outputs/output.png";
 
@@ -97,6 +97,32 @@ Vec SampleHemisphere(const Vec &normal) {
     // This function randomly samples a direction on the hemisphere.
     // Hint: sample a random direction on the hemisphere with normal as the z-axis
     // Hint: Use Rodrigues' rotation formula to rotate the z-axis to the normal direction
+
+    // Random sampling
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    // Get distribution
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+
+    // Find theta and phi
+    float theta = std::acos(dist(gen));
+    float phi = 2.0f * glm::pi<float>() * dist(gen);
+
+    // Update position
+    float x = std::sin(theta) * std::cos(phi);
+    float y = std::sin(theta) * std::sin(phi);
+    float z = std::cos(theta);
+    ray = Vec(x, y, z);
+
+    // Rodrigues' rotation formula
+    glm::vec3 zAxis(0.0f, 0.0f, 1.0f);
+    glm::vec3 normalize = glm::normalize(glm::cross(zAxis, normal));
+    float cosTheta = glm::dot(zAxis, normal);
+    float sinTheta = std::sqrt(1.0f - cosTheta * cosTheta);
+
+    glm::vec3 rotatedSample = ray * cosTheta + glm::cross(normalize, ray) * sinTheta + normalize * (glm::dot(normalize, ray) * (1.0f - cosTheta));
+
     return ray;
 }
 
@@ -138,6 +164,22 @@ Color Shade(const Hittable &hittable_collection,
         // TODO 4: implement the diffuse reflection part of the shader.
         Vec wi = SampleHemisphere(hit_record.normal);
         // color += diffuseReflectance * BRDF * cos_theta / pdf;
+
+        // Find diffuse reflectance
+        Vec diffuseReflectance = TraceRay(Ray(hit_record.position, wi), hittable_collection, trace_depth + 1);
+
+        // Find BRDF
+        Vec BRDF = material.diffuse / glm::pi<float>();
+
+        // Find cos theta
+        float cosTheta = glm::dot(hit_record.normal, wi);
+        if (cosTheta <= 0) cosTheta = 0;
+
+        // Find pdf
+        float pdf = cosTheta / glm::pi<float>();
+
+        // Get result
+        color += material.k_d * diffuseReflectance * BRDF * cosTheta / pdf;
     }
     // 3. calculate specular
     if (material.k_s > 0.f && trace_depth < kMaxTraceDepth) {

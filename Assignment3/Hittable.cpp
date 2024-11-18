@@ -17,7 +17,47 @@ bool Sphere::Hit(const Ray &ray, HitRecord *hit_record) const {
     // hit_record->reflection: the direction of the reflected ray
     // hit_record->material: the material of the sphere
 
-    hit_record->material = material_;
+    // Variables
+    Point center_of_sphere = o_;
+    float radius = r_;
+    Material material = material_;
+
+    Point ray_origin = ray.o;
+    Vec ray_distance = ray.d;
+
+    // Find delta
+    glm::vec3 center_distance = ray_origin - center_of_sphere;
+    float a = glm::dot(ray_distance, ray_distance);
+    float b = 2 * glm::dot(ray_distance, center_distance);
+    float c = glm::dot(center_distance, center_distance) - (radius * radius);
+    float delta = b * b - 4.f * a * c;
+
+    // Check distance
+    float distance = 0.0f;
+    if (delta == 0.0f)
+    {
+        distance = -b / (2 * a);
+    }
+    else
+    {
+        float distance1 = (-b + sqrt(delta)) / (2 * a);
+        float distance2 = (-b - sqrt(delta)) / (2 * a);
+
+        if (distance1 < distance2) distance = distance1;
+        else distance = distance2;
+    }
+
+    // If no intersection then return
+    if (distance <= 0) return false;
+
+    // Initialize the hit_record with the intersection information
+    hit_record->position = ray_origin + distance * ray_distance;
+    hit_record->normal = glm::normalize(hit_record->position - center_of_sphere);
+    hit_record->distance = distance;
+    hit_record->in_direction = ray_distance;
+    hit_record->reflection = glm::normalize(ray_distance - 2 * glm::dot(ray_distance, hit_record->normal) * hit_record->normal);
+    hit_record->material = material;
+
     return true;
 }
 
@@ -74,6 +114,75 @@ bool Triangle::Hit(const Ray &ray, HitRecord *hit_record) const {
     // glm::cross
     // glm::dot
     // glm::length
+
+    // Variables
+    Point vertice1 = a_;
+    Point vertice2 = b_;
+    Point vertice3 = c_;
+
+    Vec normal_vertice1 = n_a_;
+    Vec normal_vertice2 = n_b_;
+    Vec normal_vertice3 = n_c_;
+
+    bool phong_interpolation = phong_interpolation_;
+
+    Point ray_origin = ray.o;
+    Vec ray_distance = ray.d;
+
+    // Find normal
+    glm::vec3 normal = glm::cross(vertice2 - vertice1, vertice3 - vertice1);
+
+    // If invalid then no intersection
+    if (glm::dot(ray_distance, normal) == 0.0f) return false;
+    
+    // Find distance
+    float distance = (glm::dot(normal, vertice1) - glm::dot(normal, ray_origin)) / glm::dot(normal, ray_distance);
+
+    // If distance is near 0 then no intersection
+    if (distance <= 1e-5f) return false;
+
+    // Find directions
+    glm::vec3 position = ray_origin + distance * ray_distance;
+
+    glm::vec3 origin_vertice1 = position - vertice1;
+    glm::vec3 origin_vertice2 = position - vertice2;
+    glm::vec3 origin_vertice3 = position - vertice3;
+
+    glm::vec3 cross_origin_1_2 = glm::cross(origin_vertice1, origin_vertice2);
+    glm::vec3 cross_origin_2_3 = glm::cross(origin_vertice2, origin_vertice3);
+    glm::vec3 cross_origin_3_1 = glm::cross(origin_vertice3, origin_vertice1);
+
+    // If direction not same then return false
+    if (glm::dot(cross_origin_1_2, cross_origin_2_3) <= 0 || glm::dot(cross_origin_2_3, cross_origin_3_1) <= 0 || glm::dot(cross_origin_3_1, cross_origin_1_2) <= 0) return false;
+
+    // Find final normal
+    if (phong_interpolation)
+    {
+        // If phong
+        float length_origin_1_2 = glm::length(cross_origin_1_2) / 2;
+        float length_origin_2_3 = glm::length(cross_origin_2_3) / 2;
+        float length_origin_3_1 = glm::length(cross_origin_3_1) / 2;
+        float area = glm::length(normal) / 2;
+
+        float alphaA = length_origin_2_3 / area;
+        float alphaB = length_origin_3_1 / area;
+        float alphaC = length_origin_1_2 / area;
+
+        normal = alphaA * normal_vertice1 + alphaB * normal_vertice2 + alphaC * normal_vertice3;
+    }
+    else
+    {
+        // If no phong
+        normal = glm::normalize(normal);
+    }
+
+    // Initialize the hit_record with the intersection information
+    hit_record->position = position;
+    hit_record->normal = normal;
+    hit_record->distance = distance;
+    hit_record->in_direction = ray_distance;
+    hit_record->reflection = glm::normalize(ray_distance - 2 * glm::dot(ray_distance, normal) * normal);
+
     return true;
 }
 

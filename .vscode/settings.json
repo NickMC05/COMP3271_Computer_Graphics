@@ -65,7 +65,15 @@
         "xmemory": "cpp",
         "xstring": "cpp",
         "xtr1common": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "random": "cpp",
+        "deque": "cpp",
+        "filesystem": "cpp",
+        "fstream": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "unordered_set": "cpp",
+        "xtree": "cpp"
     },
     "cmake.sourceDirectory": "C:/Users/user/Documents/College/COMP3271/Assignments/COMP3271_Computer_Graphics/TestOpenGL"
 }
